@@ -99,9 +99,26 @@ RUN mkdir -p /var/tmp && wget -q -nc --no-check-certificate -P /var/tmp https://
     rm -rf /var/tmp/OpenBLAS-0.3.9 /var/tmp/v0.3.9.tar.gz
 ENV LD_LIBRARY_PATH=/usr/local/openblas/lib:$LD_LIBRARY_PATH
 
+# Eccodes-2.22.0
+RUN apt-get update -y && \
+    DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+        cmake && \
+    rm -rf /var/lib/apt/lists/*
+RUN mkdir -p /var/tmp && wget -q -nc --no-check-certificate -P /var/tmp https://confluence.ecmwf.int/download/attachments/45757960/eccodes-2.22.0-Source.tar.gz && \
+    mkdir -p /var/tmp && tar -x -f /var/tmp/eccodes-2.22.0-Source.tar.gz -C /var/tmp -z && \
+    mkdir -p /var/tmp/eccodes-2.22.0-Source/build && cd /var/tmp/eccodes-2.22.0-Source/build && \
+    cmake -DCMAKE_INSTALL_PREFIX=/usr/local/eccodes ../ && \
+    make -j$(nproc) && \
+    make -j$(nproc) install && \
+    rm -rf /var/tmp/eccodes-2.22.0-Source /var/tmp/eccodes-2.22.0-Source.tar.gz
+ENV ECCODES_DIR=/usr/local/eccodes \
+    CPATH=$ECCODES_DIR/include:$CPATH \
+    LD_LIBRARY_PATH=$ECCODES_DIR/lib:$LD_LIBRARY_PATH \
+    LIBRARY_PATH=$ECCODES_DIR/lib:$LIBRARY_PATH \
+    PATH=$ECCODES_DIR/bin:$PATH
+
 RUN mkdir -p /opt/esm && cd /opt/esm && umask 0000
 
-# Anaconda
 RUN apt-get update -y && \
     DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
         binutils \
@@ -115,16 +132,6 @@ RUN apt-get update -y && \
         rsync \
         subversion && \
     rm -rf /var/lib/apt/lists/*
-RUN mkdir -p / && wget -q -nc --no-check-certificate -P / http://repo.anaconda.com/miniconda/Miniconda3-py38_4.8.3-Linux-x86_64.sh && \
-    bash /Miniconda3-py38_4.8.3-Linux-x86_64.sh -b -p /opt/esm/anaconda && \
-    /opt/esm/anaconda/bin/conda init && \
-    ln -s /opt/esm/anaconda/etc/profile.d/conda.sh /etc/profile.d/conda.sh && \
-    . /opt/esm/anaconda/etc/profile.d/conda.sh && \
-    conda activate base && \
-    conda config --add channels conda-forge && \
-    conda install -y cdo=1.9.9 diffutils=3.7 eccodes=2.20.0 openjpeg=2.4.0 perl-xml-parser=2.44 tk=8.6.10 && \
-    /opt/esm/anaconda/bin/conda clean -afy && \
-    rm -rf /Miniconda3-py38_4.8.3-Linux-x86_64.sh
 
 RUN wget -q -nc --no-check-certificate -P /opt/esm https://github.com/metomi/fcm/archive/refs/tags/2021.05.0.tar.gz && \
     tar -x -f /opt/esm/2021.05.0.tar.gz -C /opt/esm && \
