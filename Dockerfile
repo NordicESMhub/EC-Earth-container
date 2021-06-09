@@ -125,6 +125,9 @@ RUN apt-get update -y && \
         ca-certificates \
         csh \
         git \
+        libxml-libxml-perl \
+        libxml2-dev \
+        libxml2-utils \
         locales \
         make \
         nano \
